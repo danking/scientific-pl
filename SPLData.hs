@@ -22,8 +22,10 @@ data TypeScheme = QuantifiedConstraintsTS [TypeId] [TypeConstraint] Type
 
 type Id = String
 
+data PrimOp = Plus | Minus | Star | Slash
+
 data Atom = IntegerE Integer
-          | PrimOpE Id Expr Expr
+          | PrimOpE PrimOp Expr Expr
           | PairE Expr Expr
           | UnitE
           | InLeftE Expr
