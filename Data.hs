@@ -22,6 +22,13 @@ data TypeScheme = QuantifiedConstraintsTS [TypeId] [TypeConstraint] Type
 
 type Id = String
 
+data Atom = IntegerE Integer
+          | PrimOpE Id Expr Expr
+          | PairE Expr Expr
+          | UnitE
+          | InLeftE Expr
+          | InRightE Expr
+
 data Expr = VarE Id
           | TypeInstantiateE Expr [Type] [Expr]
           | AppE Expr [Expr]
@@ -29,12 +36,7 @@ data Expr = VarE Id
           | SubscriptE Expr Expr
           | SubscriptUpdateE Expr Expr Expr
             -- base types
-          | IntegerE Integer
-          | PrimOpE Id Expr Expr
-          | PairE Expr Expr
-          | UnitE
-          | InLeftE Expr
-          | InRightE Expr
+          | Atom
           | FailE String
           deriving (Eq, Show, Read)
 
