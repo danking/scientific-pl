@@ -1,4 +1,4 @@
-{-#LANGUAGE GADTs-}
+{-# LANGUAGE TypeFamilies #-}
 module SPLData where
 
 type TypeId = String
@@ -24,33 +24,42 @@ data TypeScheme = QuantifiedConstraintsTS [TypeId] [TypeConstraint] Type
 type Id = String
 
 data PrimOp = Plus | Minus | Star | Slash
-
-data Atom
-data Fail
-data Expr
-data Statement
-
-data Term a = IntegerE         :: Integer -> Term Atom
-            | PrimOpE          :: PrimOp -> Term a -> Term a -> Term Atom
-            | PairE            :: Term a -> Term a -> Term Atom
-            | UnitE            :: Term Atom
-            | InLeftE          :: Term a -> Term Atom
-            | InRightE         :: Term a -> Term Atom
-              -- Fail
-            | FailE            :: String -> Term Fail
-              -- Expr
-            | VarE             :: Id -> Term Expr
-            | TypeInstantiateE :: Term a -> [Type] -> [Term a] -> Term Expr
-            | AppE             :: Term a -> [Term a] -> Term Expr
-            | MatchE           :: Term a -> [(Pattern, Term a)] -> Term Expr
-            | SubscriptE       :: Term a -> Term a -> Term Expr
-            | SubscriptUpdateE :: Term a -> Term a -> Term a -> Term Expr
-              -- Statements
-            | FunctionDefS     :: Id -> [Id] -> TypeScheme -> (Term a) -> Term Statement
-            | ClassS           :: TypeConstraintID -> TypeId -> [TypeConstraint] -> [(Id, Type)] -> Term Statement
-            | InstanceS        :: Id -> TypeConstraintID -> TypeId -> [(Id, (Term a))] -> Term Statement
-            | SequenceS        :: (Term a) -> (Term a) -> Term Statement
             deriving (Eq, Show, Read)
+
+data Statement = ExprS Expr
+               | FailS Fail
+               | FunctionDef Id [Id] TypeScheme Expr
+               | ClassS TypeConstraintID TypeId [TypeConstraint] [(Id, Type)]
+               | InstanceS Id TypeConstraintID TypeId [(Id, Expr)]
+               | SequenceS Statement Statement
+  deriving (Eq, Show, Read)
+
+data Expr = IntegerE         Integer
+          | PairE            Expr Expr
+          | UnitE
+          | FailE            String
+          | InLeftE          Expr
+          | InRightE         Expr
+          | VarE             Id
+          | PrimOpE          PrimOp
+          | PrimOpAppE       Expr Expr Expr
+          | AppE             Expr [Type] [Expr] [Expr]
+          | MatchE           Expr [(Pattern, Expr)]
+          | SubscriptE       Expr Expr
+          | SubscriptUpdateE Expr Expr Expr
+          deriving (Eq, Show, Read)
+
+data Value = IntegerV Integer
+           | PairV Value Value
+           | UnitV
+           | InLeftV Value
+           | InRightV Value
+           | FunctionV Id [Id] TypeScheme Expr
+           | PrimOpV PrimOp
+           deriving (Eq, Show, Read)
+
+data Fail = Fail String
+          deriving (Eq, Show, Read)
 
 data Pattern = PatternVarP Id Type
              | PatternTupleP Pattern Pattern
