@@ -17,7 +17,7 @@ cabal-version:       >=1.8
 executable scientific-pl
   main-is:          Main.hs
   -- other-modules:
-  build-depends:       base ==4.6.*
+  build-depends:       base == 4.6.*
 
 test-suite scientific-pl-tests
   type: detailed-0.9
