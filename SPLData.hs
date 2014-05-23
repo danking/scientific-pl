@@ -1,3 +1,4 @@
+{-#LANGUAGE GADTs-}
 module SPLData where
 
 type TypeId = String
@@ -24,23 +25,32 @@ type Id = String
 
 data PrimOp = Plus | Minus | Star | Slash
 
-data Atom = IntegerE Integer
-          | PrimOpE PrimOp Expr Expr
-          | PairE Expr Expr
-          | UnitE
-          | InLeftE Expr
-          | InRightE Expr
+data Atom
+data Fail
+data Expr
+data Statement
 
-data Expr = VarE Id
-          | TypeInstantiateE Expr [Type] [Expr]
-          | AppE Expr [Expr]
-          | MatchE Expr [(Pattern, Expr)]
-          | SubscriptE Expr Expr
-          | SubscriptUpdateE Expr Expr Expr
-            -- base types
-          | Atom
-          | FailE String
-          deriving (Eq, Show, Read)
+data Term a = IntegerE         :: Integer -> Term Atom
+            | PrimOpE          :: PrimOp -> Term a -> Term a -> Term Atom
+            | PairE            :: Term a -> Term a -> Term Atom
+            | UnitE            :: Term Atom
+            | InLeftE          :: Term a -> Term Atom
+            | InRightE         :: Term a -> Term Atom
+              -- Fail
+            | FailE            :: String -> Term Fail
+              -- Expr
+            | VarE             :: Id -> Term Expr
+            | TypeInstantiateE :: Term a -> [Type] -> [Term a] -> Term Expr
+            | AppE             :: Term a -> [Term a] -> Term Expr
+            | MatchE           :: Term a -> [(Pattern, Term a)] -> Term Expr
+            | SubscriptE       :: Term a -> Term a -> Term Expr
+            | SubscriptUpdateE :: Term a -> Term a -> Term a -> Term Expr
+              -- Statements
+            | FunctionDefS     :: Id -> [Id] -> TypeScheme -> (Term a) -> Term Statement
+            | ClassS           :: TypeConstraintID -> TypeId -> [TypeConstraint] -> [(Id, Type)] -> Term Statement
+            | InstanceS        :: Id -> TypeConstraintID -> TypeId -> [(Id, (Term a))] -> Term Statement
+            | SequenceS        :: (Term a) -> (Term a) -> Term Statement
+            deriving (Eq, Show, Read)
 
 data Pattern = PatternVarP Id Type
              | PatternTupleP Pattern Pattern
@@ -48,10 +58,3 @@ data Pattern = PatternVarP Id Type
              | PatternInLeftP Pattern
              | PatternInRightP Pattern
              deriving (Eq, Show, Read)
-
-data Statement = Expr
-               | FunctionDefinitionS Id [Id] TypeScheme Expr
-               | ClassS TypeConstraintID TypeId [TypeConstraint] [(Id, Type)]
-               | InstanceS Id TypeConstraintID TypeId [(Id, Expr)]
-               | SequenceS Expr Expr
-               deriving (Eq, Show, Read)
