@@ -28,7 +28,6 @@ data Expr = VarE Id
           | MatchE Expr [(Pattern, Expr)]
           | SubscriptE Expr Expr
           | SubscriptUpdateE Expr Expr Expr
-          | SequenceE Expr Expr
             -- base types
           | IntegerE Integer
           | PrimOpE Id Expr Expr
@@ -50,4 +49,5 @@ data Statement = Expr
                | FunctionDefinitionS Id [Id] TypeScheme Expr
                | ClassS TypeConstraintID TypeId [TypeConstraint] [(Id, Type)]
                | InstanceS Id TypeConstraintID TypeId [(Id, Expr)]
+               | SequenceS Expr Expr
                deriving (Eq, Show, Read)
