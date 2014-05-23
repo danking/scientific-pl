@@ -36,6 +36,7 @@ data Expr = VarE Id
           | UnitE
           | InLeftE Expr
           | InRightE Expr
+          | FailE String
           deriving (Eq, Show, Read)
 
 data Pattern = PatternVarP Id Type
