@@ -19,11 +19,13 @@ executable scientific-pl
   -- other-modules:
   build-depends:       base ==4.6.*
 
-Test-Suite test-melody
-  type:               detailed-1.0
-  hs-source-dirs:     test
-  build-depends:      base >=4.6 && <4.7,
-                      test-framework,
-                      test-framework-hunit,
-                      HUnit,
-                      containers == 0.5.*
+test-suite scientific-pl-tests
+  type: detailed-0.9
+  test-module: Tests
+
+  hs-source-dirs: tests
+
+  build-depends:
+    base >= 4.6 && < 4.8,
+    Cabal >= 1.16.0 && < 1.18,
+    cabal-test-quickcheck
