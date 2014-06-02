@@ -14,23 +14,47 @@ category:            Language
 build-type:          Simple
 cabal-version:       >=1.8
 
-executable scientific-pl
-  main-is:          Main.hs
-  hs-source-dirs:   .
+library
+  exposed-modules:
+      SPLData
+    , SPLEval
 
-  -- other-modules:
-  build-depends:       base == 4.6.*,
-                       containers == 0.5.5.1
+  ghc-options:
+      -Wall
+
+  build-depends:
+      base == 4.6.*
+    , containers == 0.5.5.1
+    , transformers >= 0.4.1.0
+
+-- executable scientific-pl
+--   main-is:          Main.hs
+
+--   ghc-options:
+--       -Wall
+
+--   build-depends:
+--       base == 4.6.*
+--     , scientific-pl
 
 test-suite scientific-pl-tests
   type: detailed-0.9
   test-module: Tests
 
   hs-source-dirs: ., tests
+  other-modules:
+      SPLData
+    , SPLEval
+
+  ghc-options:
+      -Wall
 
   build-depends:
-    base >= 4.6 && < 4.8,
-    Cabal >= 1.16.0 && < 1.18,
-    cabal-test-quickcheck,
-    QuickCheck >= 2.7.3,
-    containers == 0.5.5.1
+      base >= 4.6 && < 4.8
+    , Cabal >= 1.20
+    -- , cabal-test-quickcheck
+    -- , QuickCheck >= 2.7.3
+    , HUnit
+    , cabal-test-hunit
+    , containers == 0.5.5.1
+    , transformers >= 0.4.1.0

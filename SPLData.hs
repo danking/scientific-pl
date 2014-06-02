@@ -3,20 +3,19 @@ module SPLData where
 
 type TypeId = String
 
-data Type = IntegerT
+data Type = NumberT
           | ProductT Type Type
           | UnitT
           | SumT Type Type
           | BottomT
           | ArrayT Integer Type
           | FunctionT [Type] Type
-          | DistributionT Type
           | TypeVar TypeId
           deriving (Eq, Show, Read)
 
-type TypeConstraintID = String
+type TypeClassId = String
 
-type TypeConstraint = (TypeConstraintID, Type)
+type TypeConstraint = (TypeClassId, Type)
 
 data TypeScheme = QuantifiedConstraintsTS [TypeId] [TypeConstraint] Type
                 deriving (Eq, Show, Read)
@@ -29,12 +28,13 @@ data PrimOp = Plus | Minus | Star | Slash
 data Statement = ExprS Expr
                | FailS Fail
                | FunctionDef Id [Id] TypeScheme Expr
-               | ClassS TypeConstraintID TypeId [TypeConstraint] [(Id, Type)]
-               | InstanceS Id TypeConstraintID TypeId [(Id, Expr)]
+               | ClassS TypeClassId TypeId [TypeConstraint] [(Id, Type)]
+                 -- (InstanceS instanceName className instantiatedType methods)
+               | InstanceS Id TypeClassId TypeScheme [(Id, Expr)]
                | SequenceS Statement Statement
   deriving (Eq, Show, Read)
 
-data Expr = IntegerE         Integer
+data Expr = NumberE          Rational
           | PairE            Expr Expr
           | UnitE
           | FailE            String
@@ -43,19 +43,27 @@ data Expr = IntegerE         Integer
           | VarE             Id
           | PrimOpE          PrimOp
           | PrimOpAppE       Expr Expr Expr
+            -- (TypeAppE procedure quantifiedTypes interfaces arguments)
           | AppE             Expr [Type] [Expr] [Expr]
+          | MethodRef        Id Expr
           | MatchE           Expr [(Pattern, Expr)]
           | SubscriptE       Expr Expr
           | SubscriptUpdateE Expr Expr Expr
           deriving (Eq, Show, Read)
 
-data Value = IntegerV Integer
+data Value = NumberV Rational
            | PairV Value Value
            | UnitV
            | InLeftV Value
            | InRightV Value
-           | FunctionV Id [Id] TypeScheme Expr
+             -- (FunctionV instanceParams valueParams typeScheme body)
+           | FunctionV [Id] [Id] TypeScheme Expr
            | PrimOpV PrimOp
+             -- (MethodV classId methodId)
+           | MethodV TypeClassId Id
+             -- (InstanceV instanceName className instantiatedType listOfMethodImpls)
+             -- NB: every Value should be a PolyFunctionV
+           | InstanceV Id TypeClassId Type [(Id, Value)]
            deriving (Eq, Show, Read)
 
 data Fail = Fail String
