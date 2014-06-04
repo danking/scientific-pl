@@ -55,8 +55,6 @@ test-suite scientific-pl-tests
       base >= 4.6
     , scientific-pl
     , Cabal
-    -- , cabal-test-quickcheck
-    -- , QuickCheck >= 2.7.3
     , HUnit
     , cabal-test-hunit
     , containers
