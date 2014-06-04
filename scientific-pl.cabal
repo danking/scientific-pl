@@ -19,6 +19,8 @@ library
       SPLData
     , SPLEval
 
+  hs-source-dirs: src
+
   ghc-options:
       -Wall
 
@@ -31,6 +33,7 @@ library
 
 -- executable scientific-pl
 --   main-is:          Main.hs
+--   hs-source-dirs: exe-src
 
 --   ghc-options:
 --       -Wall
@@ -43,16 +46,14 @@ test-suite scientific-pl-tests
   type: detailed-0.9
   test-module: Tests
 
-  hs-source-dirs: ., tests
-  other-modules:
-      SPLData
-    , SPLEval
+  hs-source-dirs: tests
 
   ghc-options:
       -Wall
 
   build-depends:
       base >= 4.6
+    , scientific-pl
     , Cabal
     -- , cabal-test-quickcheck
     -- , QuickCheck >= 2.7.3
