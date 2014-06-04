@@ -1,0 +1,124 @@
+\documentclass[10pt,letter]{article}
+
+\usepackage{amsmath}
+\usepackage{url}
+\usepackage{amssymb}
+% packages that allow mathematical formatting
+
+\usepackage{graphicx}
+% package that allows you to include graphics
+
+\usepackage{setspace}
+% package that allows you to change spacing
+
+\usepackage{cite}
+% for BibTeX
+
+\usepackage{algpseudocode}
+\usepackage{algorithmicx}
+\usepackage{algorithm}
+
+\usepackage[sc,osf]{mathpazo}
+\linespread{1.05}         % Palatino needs more leading
+\usepackage[T1]{fontenc}
+
+\fontencoding{T1}
+\fontfamily{ppl}
+\fontseries{m}
+\fontshape{n}
+\fontsize{10}{13}
+% Set font size. The first parameter is the font size to switch to; the second
+% is the \baselineskip to use. The unit of both parameters defaults to pt. A
+% rule of thumb is that the baselineskip should be 1.2 times the font size.
+\selectfont
+
+\usepackage{parskip}
+% Use the style of having no indentation with a space between paragraphs.
+
+\usepackage{enumitem}
+% Resume an enumerated list, continuing the old numbering, after some
+% intervening text.
+
+% \usepackage{fullpage}
+% package that specifies normal margins
+
+\usepackage{titling}
+% move the title up a bit, wastes less space
+\setlength{\droptitle}{-5em}
+
+\usepackage{caption}
+\usepackage{subcaption}
+% for subfigures
+
+\DeclareSymbolFont{bbold}{U}{bbold}{m}{n}
+\DeclareSymbolFontAlphabet{\mathbbold}{bbold}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Macros
+
+\newcommand{\nats}[0]{\mathbbold{N}}
+\newcommand{\rats}[0]{\mathbbold{Q}}
+
+\newcommand{\plus}[0]{+}
+\newcommand{\funcArrow}[0]{\to}
+\newcommand{\matchArrow}[0]{\Rightarrow}
+\newcommand{\constraintArrow}[0]{\Rightarrow}
+
+\newcommand{\unitType}[0]{\mathbbold{1}}
+\newcommand{\nullType}[0]{\mathbbold{0}}
+
+\newcommand{\firstAlt}[2]{\;\;&#1 & \text{#2}\\}
+\newcommand{\alt}[2]{| \firstAlt{#1}{#2}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\begin{align*}
+  T ::= \firstAlt{\nats}{The naturals}
+        \alt{T \times T}{Binary products}
+        \alt{\unitType}{Unit type}
+        \alt{T \plus T}{Sums}
+        \alt{\nullType}{The empty type}
+        \alt{array_n[T]}{n-dimensional arrays}
+        \alt{T \funcArrow T}{Function types}
+        \alt{\tau}{Type variables}
+\end{align*}
+
+\begin{align*}
+  S ::= \firstAlt{T}{Flat types}
+        \alt{C_1 \, \tau_1 \;\; C_2 \, \tau_2\; \dots \constraintArrow T}
+            {Type with class constraint}
+        \alt{\forall \,\tau_1\, \tau_2 \dots\; S}{Polymorphism}
+\end{align*}
+
+\begin{align*}
+  E ::= \firstAlt{x}{Variables}
+        \alt{1 \;|\; 2 \;|\; \dots}{Natural numbers}
+        \alt{E_1 \; \oplus \; E_2}{Primitive operations}
+        \alt{f [\tau_1\,\tau_2\,\dots] [I_1\,I_2\,\dots] (E_1\,E_2 \dots)}
+            {Function application}
+        \alt{(E_1,\, E_2)}{Pairs}
+        \alt{()}{Unit}
+        \alt{\mathrm{inl}\; E \;|\; \mathrm{inr}\; E}{Sum construction}
+        \alt{\mathrm{match}\; E \;\mathrm{with}\;
+               P_1 \matchArrow E_1 \;|\;
+               P_2 \matchArrow E_2 \dots
+               \mathrm{end}}{Match}
+        \alt{\{ \mathrm{for}\; x < E_1 : E_2 \} }{Array comprehension}
+        \alt{E_1[E_2]}{Array subscript}
+        \alt{E_1[E_2] := E_3}{Array update}
+\end{align*}
+
+\begin{align*}
+  S ::= \firstAlt{E}{Expressions}
+        \alt{S_1 \;;\; S_2}{Sequencing}
+        \alt{f [\tau_1\,\tau_2\,\dots] [C_1\,\tau_1\;\;C_2\,\tau_2\;\dots] (x_1\,x_2 \dots)}
+            {Function definition}
+        \alt{\mathrm{class}\; \tau\; \tau \; \{ f_1 : \tau_1 \dots \} }
+            {Type-class definition}
+        \alt{\mathrm{instance}\; x \;:\; C \, \tau \{ f_1 = E_1 \dots \}}
+            {Instance definition}
+\end{align*}
+
+\end{document}
