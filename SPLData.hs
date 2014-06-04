@@ -1,6 +1,8 @@
 {-# LANGUAGE TypeFamilies #-}
 module SPLData where
 
+import Data.Array.IArray
+
 type TypeId = String
 
 data Type = NumberT
@@ -47,23 +49,35 @@ data Expr = NumberE          Rational
           | AppE             Expr [Type] [Expr] [Expr]
           | MethodRef        Id Expr
           | MatchE           Expr [(Pattern, Expr)]
+          | ArrayCompE       Id Expr Expr
           | SubscriptE       Expr Expr
           | SubscriptUpdateE Expr Expr Expr
           deriving (Eq, Show, Read)
+
+data Instance = Instance { className :: TypeClassId
+                         , instantiatedType :: Type
+                         , methods :: [(Id, Value)]
+                         }
+              deriving (Eq, Show, Read)
+
+data Function = Function { instanceParams :: [Id]
+                         , valueParams :: [Id]
+                         , functionType :: TypeScheme
+                         , body :: Expr
+                         }
+              deriving (Eq, Show, Read)
 
 data Value = NumberV Rational
            | PairV Value Value
            | UnitV
            | InLeftV Value
            | InRightV Value
-             -- (FunctionV instanceParams valueParams typeScheme body)
-           | FunctionV [Id] [Id] TypeScheme Expr
+           | FunctionV Function
            | PrimOpV PrimOp
              -- (MethodV classId methodId)
            | MethodV TypeClassId Id
-             -- (InstanceV instanceName className instantiatedType listOfMethodImpls)
-             -- NB: every Value should be a PolyFunctionV
-           | InstanceV Id TypeClassId Type [(Id, Value)]
+           | InstanceV Instance
+           | ArrayV (Array Integer Value)
            deriving (Eq, Show, Read)
 
 data Fail = Fail String
