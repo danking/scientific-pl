@@ -7,9 +7,15 @@ import Data.Foldable (find)
 import Data.Array.IArray ((!), listArray, (//), Array, bounds)
 import Data.Ratio (denominator, numerator)
 import Control.Monad.Reader
+import Control.Monad.State
 
 -------------------------------------------------------------------------------
 -- Type Aliases
+
+data Heap = Heap { heapNextPtr :: ArrayPtr
+                 , heapMap :: M.Map ArrayPtr (Array Integer Value)
+                 }
+emptyHeap = Heap { heapNextPtr = 0, heapMap = M.empty }
 
 type Store = M.Map Id Value
 type TypeStore = M.Map TypeId Type
@@ -48,9 +54,9 @@ evalE (ArrayCompE identifier bound body) =
                        ++ v ++ "."
         arrayContents len = [ extendVar identifier (NumberV $ toRational index) $ evalE body
                             | index <- [0..len]]
-        doneArrayContents :: Integer -> Monae [Value]
-        doneArrayContents len = sequence $ arrayContents len
-        buildArray len = fmap (ArrayV . (listArray (0,len-1))) $ doneArrayContents len
+        doneArrayContents :: Integer -> Monae (Array Integer Value)
+        doneArrayContents len = fmap (listArray (0,len-1)) $ sequence $ arrayContents len
+        buildArray len = newArray =<< (doneArrayContents len) 
 -- FIXME: MatchE
 evalE (MatchE value patternResultPairs) = undefined
 evalE (SubscriptE array index) =
@@ -60,10 +66,11 @@ evalE (SubscriptE array index) =
   where arrayFail v = "evalE: Expected an array, but got " ++ v ++ "."
         numberFail v = "evalE: Expected a number, but got " ++ v ++ "."
 evalE (SubscriptUpdateE array index value) =
-  do array <- (asArray arrayFail) =<< evalE array
+  do arrayPtr <- (getArrayPtr arrayFail) =<< evalE array
      index <- (asInteger numberFail) =<< evalE index
      value <- evalE value
-     ret $ ArrayV $ array // [(index, value)]
+     updateArray arrayPtr index value
+     ret $ UnitV
   where arrayFail v = "evalE: Expected an array, but got " ++ v ++ "."
         numberFail v = "evalE: Expected a number, but got " ++ v ++ "."
 
@@ -127,8 +134,12 @@ bindMany ids values c =
 -- Coercions of Values
 
 asArray :: FailMsg1 String -> Value -> Monae (Array Integer Value)
-asArray _ (ArrayV arr) = ret arr
+asArray _ (ArrayV ptr) = getArray ptr
 asArray message notAnArray = die $ message $ show notAnArray
+
+getArrayPtr :: FailMsg1 String -> Value -> Monae ArrayPtr
+getArrayPtr _ (ArrayV ptr) = ret ptr
+getArrayPtr message notAnArray = die $ message $ show notAnArray
 
 asInteger :: FailMsg1 String -> Value -> Monae Integer
 asInteger = thread maybeToInteger asRational
@@ -158,7 +169,7 @@ getMethod identifier inst@(Instance { methods }) =
                      ++ " in instance " ++ show inst ++ "."
 
 maybeArraySubscript :: Array Integer Value -> Integer -> Monae Value
-maybeArraySubscript array index | (low <= index) && (index < high) = ret $ array ! index
+maybeArraySubscript array index | (low <= index) && (index <= high) = ret $ array ! index
                                 | otherwise = die $ "evalE: array index, " ++ show index
                                             ++ ", out of bounds, ["
                                             ++ show low ++ "," ++ show high ++ "]"
@@ -168,29 +179,56 @@ maybeArraySubscript array index | (low <= index) && (index < high) = ret $ array
 -------------------------------------------------------------------------------
 -- Baby's First Monad
 
-type Monae = ReaderT Store (Either Fail)
+data Environments = Environments { globalEnv :: Store
+                                 , localEnv :: Store
+                                 }
+type Monae = StateT Heap (ReaderT Environments (Either Fail))
 
-runMonae :: Monae t -> Store -> Either Fail t
-runMonae x env = runReaderT x env
+runMonae :: Monae t -> Heap -> Store -> Store -> Either Fail (t, Heap)
+runMonae x heap gEnv lEnv = runReaderT (runStateT x heap) $ Environments gEnv lEnv
 
 die :: String -> Monae a
-die message = lift $ Left $ Fail message
+die message = lift $ lift $ Left $ Fail message
 
 ret :: a -> Monae a
 ret = return
 
 lookupVar :: Id -> Monae Value
-lookupVar v = do store <- ask
-                 case M.lookup v store of
+lookupVar v = do env <- ask
+                 case M.lookup v $ localEnv env of
                    Just val -> ret val
-                   Nothing -> die $ "evalE: Variable " ++ show v ++ " is unbound."
-
+                   Nothing -> case M.lookup v $ globalEnv env of
+                                Just val -> ret val
+                                Nothing -> die $ "evalE: Variable "
+                                               ++ show v
+                                               ++ " is unbound."
 extendVar :: Id -> Value -> Monae t -> Monae t
-extendVar x v = local (\store -> M.insert x v store)
+extendVar x v = local (\env -> Environments { globalEnv = globalEnv env, localEnv = M.insert x v $ localEnv env })
+
+getArray :: ArrayPtr -> Monae (Array Integer Value)
+getArray ptr = do heap <- get
+                  case M.lookup ptr $ heapMap heap of
+                    Just arr -> ret arr
+                    Nothing -> die $ "evalE: INTERNAL ERROR MY HAIR IS ON FIRE!!!"
+
+newArray :: (Array Integer Value) -> Monae Value
+newArray initialValue = do heap <- get
+                           put Heap { heapMap = M.insert (heapNextPtr heap) initialValue $ heapMap heap
+                                    , heapNextPtr = 1 + (heapNextPtr heap)
+                                    }
+                           ret $ ArrayV $ heapNextPtr heap
+
+updateArray :: ArrayPtr -> Integer -> Value -> Monae ()
+updateArray ptr index value =
+  do heap <- get
+     case M.lookup ptr (heapMap heap) of
+       Just array -> put $ Heap { heapMap = M.insert ptr (array // [(index, value)]) $ heapMap heap
+                                , heapNextPtr = heapNextPtr heap
+                                }
+       Nothing -> die $ "evalE: INTERNAL ERROR MY HAIR IS STILL ON FIRE!"
 
 clearEnv :: Monae t -> Monae t
-clearEnv = local (\_ -> M.empty)
-
+clearEnv = local (\env -> Environments { globalEnv = globalEnv env,  localEnv = M.empty })
 -------------------------------------------------------------------------------
 -- General Combinators
 

@@ -1,8 +1,6 @@
 {-# LANGUAGE TypeFamilies #-}
 module SPLData where
 
-import Data.Array.IArray
-
 type TypeId = String
 
 data Type = NumberT
@@ -67,6 +65,8 @@ data Function = Function { instanceParams :: [Id]
                          }
               deriving (Eq, Show, Read)
 
+type ArrayPtr = Integer
+
 data Value = NumberV Rational
            | PairV Value Value
            | UnitV
@@ -77,7 +77,7 @@ data Value = NumberV Rational
              -- (MethodV classId methodId)
            | MethodV TypeClassId Id
            | InstanceV Instance
-           | ArrayV (Array Integer Value)
+           | ArrayV ArrayPtr
            deriving (Eq, Show, Read)
 
 data Fail = Fail String

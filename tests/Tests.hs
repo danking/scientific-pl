@@ -5,7 +5,6 @@ import Test.HUnit as H
 import qualified Distribution.TestSuite.HUnit as HU
 import SPLData
 import SPLEval
-import Data.Array.IArray
 
 import qualified Data.Map.Strict as M
 
@@ -62,8 +61,8 @@ tests = return
                           envShadowingId)
                    (Right UnitV)
       , checkEqual "array comprehension"
-                   (testEmptyEvalE natArrayUpToFive)
-                   (Right (ArrayV $ fmap NumberV $ listArray (0,4) [0,1,2,3,4]))
+                   (map (\i -> (testEmptyEvalE (SubscriptE natArrayUpToFive (NumberE i)))) [0,1,2,3,4])
+                   (map (\i -> (Right (NumberV i))) [0,1,2,3,4])
       , checkEqual "bad array comprehension"
                    (testEmptyEvalE (ArrayCompE "i" UnitE (VarE "i")))
                    (Left (Fail "evalE: Expected an integer for the array size but instead received UnitV."))
@@ -90,7 +89,7 @@ testEmptyEvalE :: Expr -> Either Fail Value
 testEmptyEvalE s = testEvalE s M.empty
 
 testEvalE :: Expr -> Store -> Either Fail Value
-testEvalE e s = runMonae (evalE e) s
+testEvalE e s = fmap fst $ runMonae (evalE e) emptyHeap M.empty s
 
 checkEqual :: (Eq a, Show a) => String -> a -> a -> TS.Test
 checkEqual name expected actual =
