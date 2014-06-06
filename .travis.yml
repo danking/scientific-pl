@@ -4,4 +4,4 @@ ghc:
  - 7.6
 
 before_install:
- - git clone https://github.com/pbrisbin/cabal-test-hunit.git && cd cabal-test-hunit && cabal install
+ - git clone https://github.com/pbrisbin/cabal-test-hunit.git && pushd cabal-test-hunit && cabal install && popd
