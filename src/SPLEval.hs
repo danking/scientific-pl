@@ -56,7 +56,7 @@ evalE (ArrayCompE identifier bound body) =
                             | index <- [0..len]]
         doneArrayContents :: Integer -> Monae (Array Integer Value)
         doneArrayContents len = fmap (listArray (0,len-1)) $ sequence $ arrayContents len
-        buildArray len = newArray =<< (doneArrayContents len) 
+        buildArray len = newArray =<< (doneArrayContents len)
 -- FIXME: MatchE
 evalE (MatchE value patternResultPairs) = undefined
 evalE (SubscriptE array index) =
