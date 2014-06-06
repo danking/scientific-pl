@@ -1,5 +1,7 @@
 # A Scientific Programming Language
 
+![Travis-CI Status Image](https://travis-ci.org/danking/scientific-pl.svg?branch=master)
+
 The tests can be run by executing:
 
     make test
