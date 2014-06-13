@@ -19,6 +19,9 @@ emptyHeap :: Heap
 emptyHeap = Heap { heapNextPtr = 0, heapMap = M.empty }
 
 type Store = M.Map Id Value
+emptyStore :: Store
+emptyStore = M.empty
+
 type TypeStore = M.Map TypeId Type
 type FailMsg1 a = a -> String
 type FailMsg2 a b = a -> b -> String
@@ -278,7 +281,9 @@ updateArray ptr index value =
        Nothing -> die $ "evalE: INTERNAL ERROR MY HAIR IS STILL ON FIRE!"
 
 clearEnv :: Monae t -> Monae t
-clearEnv = local (\env -> Environments { globalEnv = globalEnv env,  localEnv = M.empty })
+clearEnv = local (\env -> Environments { globalEnv = globalEnv env
+                                       , localEnv = emptyStore
+                                       })
 -------------------------------------------------------------------------------
 -- General Combinators
 
