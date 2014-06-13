@@ -84,7 +84,7 @@ data Fail = Fail String
           deriving (Eq, Show, Read)
 
 data Pattern = PatternVarP Id Type
-             | PatternTupleP Pattern Pattern
+             | PatternPairP Pattern Pattern
              | PatternUnitP
              | PatternInLeftP Pattern
              | PatternInRightP Pattern

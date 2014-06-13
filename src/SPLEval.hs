@@ -57,8 +57,9 @@ evalE (ArrayCompE identifier bound body) =
         doneArrayContents :: Integer -> Monae (Array Integer Value)
         doneArrayContents len = fmap (listArray (0,len-1)) $ sequence $ arrayContents len
         buildArray len = newArray =<< (doneArrayContents len)
--- FIXME: MatchE
-evalE (MatchE value patternResultPairs) = undefined
+evalE (MatchE value patternResultPairs) =
+  do v <- evalE value
+     findMatchAndEval v patternResultPairs
 evalE (SubscriptE array index) =
   do array <- (asArray arrayFail) =<< evalE array
      index <- (asInteger numberFail) =<< evalE index
@@ -86,6 +87,41 @@ applyE (FunctionV Function { instanceParams , valueParams , body })
   where bindArgs c = bindMany instanceParams instanceArgs $ bindMany valueParams valueArgs c
 applyE notAFunctionV _ _ _ =
   die $ "applyE: Expected a Function, got " ++ show notAFunctionV ++ "."
+
+-------------------------------------------------------------------------------
+-- Match
+
+findMatchAndEval :: Value -> [(Pattern, Expr)] -> Monae Value
+findMatchAndEval v pairs =
+  do (pattern, consequent) <- getPair v pairs
+     bindingPairs <- ret $ getPatternBindings v pattern []
+     extendVars bindingPairs $ evalE consequent
+
+getPair :: Value -> [(Pattern, Expr)] -> Monae (Pattern, Expr)
+getPair v pairs =
+  case find ((patternMatch v) . fst) pairs of
+    Just pair -> ret pair
+    Nothing -> die $ "evalE: no matching pattern for "
+                     ++ show v ++ " in "
+                     ++ show pairs
+
+patternMatch :: Value -> Pattern -> Bool
+patternMatch UnitV PatternUnitP = True
+patternMatch _ (PatternVarP _ _) = True
+patternMatch (PairV left right) (PatternPairP left' right') =
+  patternMatch left left' && patternMatch right right'
+patternMatch (InLeftV v) (PatternInLeftP p) = patternMatch v p
+patternMatch (InRightV v) (PatternInRightP p) = patternMatch v p
+
+getPatternBindings :: Value -> Pattern -> [(Id, Value)] -> [(Id, Value)]
+getPatternBindings v (PatternVarP id _) bindings = (id, v) : bindings
+getPatternBindings (PairV left right) (PatternPairP left' right') bindings =
+  (getPatternBindings right right' (getPatternBindings left left' bindings))
+getPatternBindings (InLeftV v) (PatternInLeftP p) bindings =
+  getPatternBindings v p bindings
+getPatternBindings (InRightV v) (PatternInRightP p) bindings =
+  getPatternBindings v p bindings
+
 
 -------------------------------------------------------------------------------
 -- Types
@@ -207,7 +243,16 @@ lookupVar v = do env <- ask
                                                ++ show v
                                                ++ " is unbound."
 extendVar :: Id -> Value -> Monae t -> Monae t
-extendVar x v = local (\env -> Environments { globalEnv = globalEnv env, localEnv = M.insert x v $ localEnv env })
+extendVar x v =
+  local (\env -> Environments { globalEnv = globalEnv env
+                              , localEnv = M.insert x v $ localEnv env
+                              })
+
+extendVars :: [(Id, Value)] -> Monae t -> Monae t
+extendVars bindings =
+  local (\env -> Environments { globalEnv = globalEnv env
+                              , localEnv = M.union (M.fromList bindings) $ localEnv env
+                              })
 
 getArray :: ArrayPtr -> Monae (Array Integer Value)
 getArray ptr = do heap <- get
