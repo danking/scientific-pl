@@ -4,7 +4,7 @@ import SPLData
 import Data.Char
 }
 
-%name calc
+%name parseProgram
 %tokentype { Token }
 %error { parseError }
 
@@ -248,5 +248,5 @@ lexId cs =
       ("number" , rest) -> TokenNumberT  : lexer rest
       (id ,       rest) -> TokenId id    : lexer rest
 
-main = getContents >>= print . calc . lexer
+readProgram = parseProgram . lexer
 }
