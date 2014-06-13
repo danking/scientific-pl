@@ -43,7 +43,6 @@ import Data.Char
       numberT         { TokenNumberT }
       bottomT         { TokenBottomT }
       arrayT          { TokenArrayT }
-      arrowT          { TokenArrowT }
 
 %nonassoc ':' '['
 %nonassoc STMT
