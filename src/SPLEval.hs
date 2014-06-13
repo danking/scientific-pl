@@ -15,6 +15,7 @@ import Control.Monad.State
 data Heap = Heap { heapNextPtr :: ArrayPtr
                  , heapMap :: M.Map ArrayPtr (Array Integer Value)
                  }
+emptyHeap :: Heap
 emptyHeap = Heap { heapNextPtr = 0, heapMap = M.empty }
 
 type Store = M.Map Id Value
