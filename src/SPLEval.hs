@@ -227,7 +227,6 @@ data Environments = Environments { globalEnv :: Store
                                  , localEnv :: Store
                                  }
 type Monae = StateT Heap (ReaderT Environments (Either Fail))
-
 runMonae :: Monae t -> Heap -> Store -> Store -> Either Fail (t, Heap)
 runMonae x heap gEnv lEnv = runReaderT (runStateT x heap) $ Environments gEnv lEnv
 
