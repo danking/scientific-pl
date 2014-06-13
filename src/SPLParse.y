@@ -27,6 +27,7 @@ import Data.Char
       inr             { TokenInr }
       mref            { TokenMRef }
       match           { TokenMatch }
+      end             { TokenEnd }
       with            { TokenWith }
       '|'             { TokenPipe }
       '<'             { TokenLT }
@@ -44,14 +45,16 @@ import Data.Char
       bottomT         { TokenBottomT }
       arrayT          { TokenArrayT }
 
-%nonassoc ':' '['
-%nonassoc STMT
-%nonassoc id
-%left arrowT
+%nonassoc '['
+%nonassoc with
+%nonassoc id '(' unit
+%left arrow
 %right assign
+%left '='
 %nonassoc inl inr
 %left '+' '-'
 %left '*' '/'
+%nonassoc ':'
 %left arrayT
 
 %%
@@ -67,13 +70,13 @@ statement :: { Statement }
           | expression            { ExprS $1 }
 
 functionDefinition :: { Statement }
-functionDefinition : define id '(' ids ')' typeScheme expression
+functionDefinition : define id '(' ids ')' typeScheme expression end
                      { FunctionDef $2 $4 $6 $7 }
 classDefinition    :: { Statement }
-classDefinition    : class id id '(' typeConstraints ')' typeTaggedIds %prec STMT
+classDefinition    : class id id '(' typeConstraints ')' typeTaggedIds end
                      { ClassS $2 $3 $5 $7 }
 instanceDefinition :: { Statement }
-instanceDefinition : instance id id typeScheme idExprPairs %prec STMT
+instanceDefinition : instance id id typeScheme idExprPairs end
                      { InstanceS $2 $3 $4 $5 }
 
 expression :: { Expr }
@@ -87,10 +90,11 @@ expression : int { NumberE $ fromIntegral $1 }
            | expression '-' expression { PrimOpAppE (PrimOpE Minus) $1 $3 }
            | expression '*' expression { PrimOpAppE (PrimOpE Star) $1 $3 }
            | expression '/' expression { PrimOpAppE (PrimOpE Slash) $1 $3 }
-           | expression ':' types '[' expressions ']' '(' expressions ')'
+           | expression '=' expression { PrimOpAppE (PrimOpE Equal) $1 $3 }
+           | expression ':' maybeTypes '[' maybeExpressions ']' '(' expressions ')'
              { AppE $1 $3 $5 $8 }
            | mref id expression { MethodRef $2 $3 }
-           | match expression with matchPairs { MatchE $2 $4 }
+           | match expression with matchPairs end { MatchE $2 $4 }
            | '{' expression '|' id '<' expression '}' { ArrayCompE $4 $6 $2 }
            | expression '[' expression ']' { SubscriptE $1 $3 }
            | expression '[' expression ']' assign expression { SubscriptUpdateE $1 $3 $6 }
@@ -118,10 +122,17 @@ typeNoParens : numberT { NumberT }
                -- I think it picks up the int's precedence before the arrayT so
                -- I must explicitly request the arrayT's precedence
              | arrayT int typ %prec arrayT { ArrayT $2 $3 }
-             | typ arrowT typ { FunctionT [$1] $3 }
-             | '(' typ types ')' arrowT typ { FunctionT ($2 : $3) $6 }
+             | typ arrow typ { FunctionT [$1] $3 }
+             | '(' typ types ')' arrow typ { FunctionT ($2 : $3) $6 }
              | typeIdRef { $1 }
--- matchPair :
+
+matchPair : matchPat fatArrow expression { ($1, $3) }
+matchPat :: { Pattern }
+         : id ':' typ { PatternVarP $1 $3 }
+         | '(' matchPat ',' matchPat ')' { PatternPairP $2 $4 }
+         | unit { PatternUnitP }
+         | inl matchPat { PatternInLeftP $2 }
+         | inr matchPat { PatternInRightP $2 }
 
 typeTaggedId : id ':' typ { ($1, $3) }
 
@@ -139,6 +150,10 @@ ids : id { [$1] }
 types :: { [Type] }
       : typ       { [$1] }
       | types typ { $2 : $1 }
+
+maybeTypes :: { [Type] }
+           : { [] }
+           | types { $1 }
 
 matchPairs : matchPair            { [$1] }
            | matchPairs matchPair { $2 : $1 }
@@ -160,6 +175,9 @@ idExprPairs : idExprPair             { [$1] }
 
 expressions : expression             { [$1] }
             | expressions expression { $2 : $1 }
+
+maybeExpressions : { [] }
+                 | expressions { $1 }
 
 {
 parseError :: [Token] -> a
@@ -186,6 +204,8 @@ data Token
   | TokenInr
   | TokenMRef
   | TokenMatch
+  | TokenEnd
+  | TokenWith
   | TokenPipe
   | TokenLT
   | TokenAssign
@@ -242,6 +262,7 @@ lexId cs =
       ("inr" ,    rest) -> TokenInr      : lexer rest
       ("mref" ,   rest) -> TokenMRef     : lexer rest
       ("match" ,  rest) -> TokenMatch    : lexer rest
+      ("end" ,    rest) -> TokenEnd      : lexer rest
       ("with"   , rest) -> TokenWith     : lexer rest
       ("define" , rest) -> TokenDefine   : lexer rest
       ("class" ,  rest) -> TokenClass    : lexer rest
