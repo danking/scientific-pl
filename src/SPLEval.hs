@@ -121,6 +121,10 @@ handlePrimOp (PrimOpV Plus)  (NumberV left) (NumberV right) = ret $ NumberV $ le
 handlePrimOp (PrimOpV Minus) (NumberV left) (NumberV right) = ret $ NumberV $ left - right
 handlePrimOp (PrimOpV Star)  (NumberV left) (NumberV right) = ret $ NumberV $ left * right
 handlePrimOp (PrimOpV Slash) (NumberV left) (NumberV right) = ret $ NumberV $ left / right
+handlePrimOp (PrimOpV Equal) (NumberV left) (NumberV right) =
+  ret $ case left == right of
+    True -> InLeftV UnitV
+    False -> InRightV UnitV
 handlePrimOp op _ _ = die $ "unknown primop" ++ show op
 
 -------------------------------------------------------------------------------

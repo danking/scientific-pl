@@ -22,7 +22,7 @@ data TypeScheme = QuantifiedConstraintsTS [TypeId] [TypeConstraint] Type
 
 type Id = String
 
-data PrimOp = Plus | Minus | Star | Slash
+data PrimOp = Plus | Minus | Star | Slash | Equal
             deriving (Eq, Show, Read)
 
 data Statement = ExprS Expr
