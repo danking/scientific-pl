@@ -37,6 +37,8 @@ import Data.Char
       '{'             { TokenOC }
       '}'             { TokenCC }
       unit            { TokenUnit }
+      arrow           { TokenArrow }
+      fatArrow        { TokenFatArrow }
 -- Types
       numberT         { TokenNumberT }
       bottomT         { TokenBottomT }
@@ -194,6 +196,8 @@ data Token
   | TokenOC
   | TokenCC
   | TokenUnit
+  | TokenArrow
+  | TokenFatArrow
 -- Types
   | TokenNumberT
   | TokenUnitT
@@ -211,7 +215,8 @@ lexer (c:cs)
       | isId c = lexId (c:cs)
       | isDigit c = lexNum (c:cs)
 lexer ('(':')':cs) = TokenUnit : lexer cs
-lexer ('-':'>':cs) = TokenArrowT : lexer cs
+lexer ('-':'>':cs) = TokenArrow : lexer cs
+lexer ('=':'>':cs) = TokenFatArrow : lexer cs
 lexer (':':'=':cs) = TokenAssign : lexer cs
 lexer (':':cs) = TokenColon : lexer cs
 lexer ('=':cs) = TokenEq : lexer cs
