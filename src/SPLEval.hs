@@ -116,7 +116,7 @@ patternMatch (PairV left right) (PatternPairP left' right') =
   patternMatch left left' && patternMatch right right'
 patternMatch (InLeftV v) (PatternInLeftP p) = patternMatch v p
 patternMatch (InRightV v) (PatternInRightP p) = patternMatch v p
-patternMatch a b = die "Could not match " ++ show a ++ " with " ++ show b
+patternMatch _ _ = False
 
 getPatternBindings :: Value -> Pattern -> [(Id, Value)] -> [(Id, Value)]
 getPatternBindings v (PatternVarP id _) bindings = (id, v) : bindings
