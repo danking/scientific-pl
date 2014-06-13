@@ -26,7 +26,7 @@ data PrimOp = Plus | Minus | Star | Slash | Equal
             deriving (Eq, Show, Read)
 
 data Statement = ExprS Expr
-               | FailS Fail
+               | FailS String
                | FunctionDef Id [Id] TypeScheme Expr
                | ClassS TypeClassId TypeId [TypeConstraint] [(Id, Type)]
                  -- (InstanceS instanceName className instantiatedType methods)
