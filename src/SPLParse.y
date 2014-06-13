@@ -199,14 +199,16 @@ data Token
   | TokenUnitT
   | TokenBottomT
   | TokenArrayT
-  | TokenArrowT
   deriving Show
+
+isId :: Char -> Bool
+isId c = c == '_' || isAlpha c
 
 lexer :: String -> [Token]
 lexer [] = []
 lexer (c:cs)
       | isSpace c = lexer cs
-      | isAlpha c = lexId (c:cs)
+      | isId c = lexId (c:cs)
       | isDigit c = lexNum (c:cs)
 lexer ('(':')':cs) = TokenUnit : lexer cs
 lexer ('-':'>':cs) = TokenArrowT : lexer cs
@@ -231,7 +233,7 @@ lexNum cs = TokenInt (read num) : lexer rest
       where (num,rest) = span isDigit cs
 
 lexId cs =
-   case span isAlpha cs of
+   case span isId cs of
       ("inl" ,    rest) -> TokenInl      : lexer rest
       ("inr" ,    rest) -> TokenInr      : lexer rest
       ("mref" ,   rest) -> TokenMRef     : lexer rest
