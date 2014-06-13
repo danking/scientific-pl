@@ -83,7 +83,7 @@ evalS = undefined
 
 applyE :: Value -> [Type] -> [Value] -> [Value] -> Monae Value
 applyE (FunctionV Function { instanceParams , valueParams , body })
-       types instanceArgs valueArgs =
+       _ instanceArgs valueArgs =
   clearEnv $ bindArgs $ evalE body
   where bindArgs c = bindMany instanceParams instanceArgs $ bindMany valueParams valueArgs c
 applyE notAFunctionV _ _ _ =
@@ -128,7 +128,7 @@ getPatternBindings (InRightV v) (PatternInRightP p) bindings =
 -- Types
 
 typeSchemeSubst :: TypeScheme -> [Type] -> [Value] -> Monae Type
-typeSchemeSubst (QuantifiedConstraintsTS typeIds typeConstraints flatType) typeArguments instances =
+typeSchemeSubst (QuantifiedConstraintsTS typeIds _ flatType) typeArguments _ =
   typeSubst flatType $ M.fromList $ zip typeIds typeArguments
 
 typeSubst :: Type -> TypeStore -> Monae Type
