@@ -92,8 +92,8 @@ testEvalE :: Expr -> Store -> Either Fail Value
 testEvalE e s = fmap fst $ runMonae (evalE e) emptyHeap M.empty s
 
 checkEqual :: (Eq a, Show a) => String -> a -> a -> TS.Test
-checkEqual name expected actual =
-  HU.test name $ H.TestCase $ H.assertEqual name actual expected
+checkEqual name actual expected =
+  HU.test name $ H.TestCase $ H.assertEqual name expected actual
 
 intShowInstance = (InstanceV
                    (Instance { className = "Show"
