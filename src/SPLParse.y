@@ -31,15 +31,16 @@ import Data.Char
       with            { TokenWith }
       '|'             { TokenPipe }
       '<'             { TokenLT }
+      '>'             { TokenGT }
       assign          { TokenAssign }
       forall          { TokenForAll }
       '['             { TokenOB }
       ']'             { TokenCB }
       '{'             { TokenOC }
       '}'             { TokenCC }
-      unit            { TokenUnit }
       arrow           { TokenArrow }
       fatArrow        { TokenFatArrow }
+      '@'             { TokenAt }
 -- Types
       numberT         { TokenNumberT }
       bottomT         { TokenBottomT }
@@ -47,17 +48,20 @@ import Data.Char
 
 %nonassoc '['
 %nonassoc with
-%nonassoc id '(' unit
+%nonassoc id '('
 %left arrow
 %right assign
 %left '='
 %nonassoc inl inr
 %left '+' '-'
 %left '*' '/'
-%nonassoc ':'
+%nonassoc '@'
 %left arrayT
 
 %%
+
+top :: { [Statement] }
+    : statements { reverse $1 }
 
 statements :: { [Statement] }
            : statement            { [$1] }
@@ -70,8 +74,8 @@ statement :: { Statement }
           | expression            { ExprS $1 }
 
 functionDefinition :: { Statement }
-functionDefinition : define id '(' ids ')' typeScheme expression end
-                     { FunctionDef $2 $4 $6 $7 }
+functionDefinition : define id '<' maybeIds '>' '[' maybeConstrainedIds ']' '(' maybeTypedIds ')' ':' typeNoParens expression end
+                     { FunctionDef $2 $4 $7 $10 $13 $14 }
 classDefinition    :: { Statement }
 classDefinition    : class id id '(' typeConstraints ')' typeTaggedIds end
                      { ClassS $2 $3 $5 $7 }
@@ -91,8 +95,8 @@ expression : int { NumberE $ fromIntegral $1 }
            | expression '*' expression { PrimOpAppE (PrimOpE Star) $1 $3 }
            | expression '/' expression { PrimOpAppE (PrimOpE Slash) $1 $3 }
            | expression '=' expression { PrimOpAppE (PrimOpE Equal) $1 $3 }
-           | expression ':' maybeTypes '[' maybeExpressions ']' '(' expressions ')'
-             { AppE $1 $3 $5 $8 }
+           | expression '@' '<' maybeTypes '>' '[' maybeExpressions ']' '(' expressions ')'
+             { AppE $1 $4 $7 $10 }
            | mref id expression { MethodRef $2 $3 }
            | match expression with matchPairs end { MatchE $2 $4 }
            | '{' expression '|' id '<' expression '}' { ArrayCompE $4 $6 $2 }
@@ -107,7 +111,8 @@ typeScheme : typ { QuantifiedConstraintsTS [] [] $1 }
            | '(' forall ids '[' typeConstraints ']' typ ')'
              { QuantifiedConstraintsTS $3 $5 $7 }
 
-typeConstraint : '(' id typ ')' { ($2, $3) }
+typeConstraint :: { TypeConstraint }
+               : '(' id typ ')' { ($2, $3) }
 
 typ :: { Type }
 typ : typeNoParens { $1 }
@@ -147,6 +152,32 @@ ids :: { [String] }
 ids : id { [$1] }
     | ids id { $2 : $1 }
 
+constrainedId :: { ConstrainedId }
+              : id ':' typeConstraint { ($1, $3) }
+
+typedId :: { TypedId }
+        : id ':' typ { ($1, $3) }
+
+constrainedIds :: { [ConstrainedId] }
+               : constrainedId { [$1] }
+               | constrainedId constrainedIds { $1 : $2 }
+
+typedIds :: { [TypedId] }
+         : typedId { [$1] }
+         | typedId typedIds { $1 : $2 }
+
+maybeTypedIds :: { [TypedId] }
+              : { [] }
+              | typedIds { $1 }
+
+maybeConstrainedIds :: { [ConstrainedId] }
+                    : { [] }
+                    | constrainedIds { $1 }
+
+maybeIds :: { [String] }
+maybeIds : { [] }
+         | ids { $1 }
+
 types :: { [Type] }
       : typ       { [$1] }
       | types typ { $2 : $1 }
@@ -179,6 +210,8 @@ expressions : expression             { [$1] }
 maybeExpressions : { [] }
                  | expressions { $1 }
 
+unit : '(' ')' { undefined }
+
 {
 parseError :: [Token] -> a
 parseError _ = error "Parse error"
@@ -208,18 +241,18 @@ data Token
   | TokenWith
   | TokenPipe
   | TokenLT
+  | TokenGT
   | TokenAssign
   | TokenForAll
   | TokenOB
   | TokenCB
   | TokenOC
   | TokenCC
-  | TokenUnit
   | TokenArrow
   | TokenFatArrow
+  | TokenAt
 -- Types
   | TokenNumberT
-  | TokenUnitT
   | TokenBottomT
   | TokenArrayT
   deriving Show
@@ -233,7 +266,6 @@ lexer (c:cs)
       | isSpace c = lexer cs
       | isId c = lexId (c:cs)
       | isDigit c = lexNum (c:cs)
-lexer ('(':')':cs) = TokenUnit : lexer cs
 lexer ('-':'>':cs) = TokenArrow : lexer cs
 lexer ('=':'>':cs) = TokenFatArrow : lexer cs
 lexer (':':'=':cs) = TokenAssign : lexer cs
@@ -248,10 +280,13 @@ lexer (')':cs) = TokenCP : lexer cs
 lexer (',':cs) = TokenComma : lexer cs
 lexer ('|':cs) = TokenPipe : lexer cs
 lexer ('<':cs) = TokenLT : lexer cs
+lexer ('>':cs) = TokenGT : lexer cs
 lexer ('[':cs) = TokenOB : lexer cs
 lexer (']':cs) = TokenCB : lexer cs
 lexer ('{':cs) = TokenOC : lexer cs
 lexer ('}':cs) = TokenCC : lexer cs
+lexer ('@':cs) = TokenAt : lexer cs
+lexer (':':cs) = TokenColon : lexer cs
 
 lexNum cs = TokenInt (read num) : lexer rest
       where (num,rest) = span isDigit cs

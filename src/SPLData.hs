@@ -17,6 +17,9 @@ type TypeClassId = String
 
 type TypeConstraint = (TypeClassId, Type)
 
+type ConstrainedId = (Id, TypeConstraint)
+type TypedId = (Id, Type)
+
 data TypeScheme = QuantifiedConstraintsTS [TypeId] [TypeConstraint] Type
                 deriving (Eq, Show, Read)
 
@@ -27,7 +30,7 @@ data PrimOp = Plus | Minus | Star | Slash | Equal
 
 data Statement = ExprS Expr
                | FailS String
-               | FunctionDef Id [Id] TypeScheme Expr
+               | FunctionDef Id [Id] [ConstrainedId] [TypedId] Type Expr
                | ClassS TypeClassId TypeId [TypeConstraint] [(Id, Type)]
                  -- (InstanceS instanceName className instantiatedType methods)
                | InstanceS Id TypeClassId TypeScheme [(Id, Expr)]
@@ -53,7 +56,7 @@ data Expr = NumberE          Rational
           deriving (Eq, Show, Read)
 
 data Instance = Instance { className :: TypeClassId
-                         , instantiatedType :: Type
+                         , instantiatedType :: TypeScheme
                          , methods :: [(Id, Value)]
                          }
               deriving (Eq, Show, Read)

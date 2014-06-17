@@ -79,7 +79,41 @@ evalE (SubscriptUpdateE array index value) =
   where arrayFail v = "evalE: Expected an array, but got " ++ v ++ "."
         numberFail v = "evalE: Expected a number, but got " ++ v ++ "."
 
-evalS = undefined
+evalS :: Statement -> [StatementMonae Value]
+evalS (ExprS e) = [lift $ evalE e]
+evalS (FailS s) = [lift $ die s]
+evalS (FunctionDef name typeParams constraintedInstParams typedValParams returnType body) =
+  [(bindGlobalVar name $ FunctionV Function { instanceParams = instParams
+                                            , valueParams = valParams
+                                            , functionType = typeScheme
+                                            , body = body
+                                            })
+   >> return UnitV]
+  where valParams = map fst typedValParams
+        instParams = map fst constraintedInstParams
+        constraints = map snd constraintedInstParams
+        valParamTypes = map snd typedValParams
+        flatFuncType = FunctionT valParamTypes returnType
+        typeScheme = QuantifiedConstraintsTS typeParams constraints flatFuncType
+evalS (ClassS className typeVar constraints methodTypePairs) = [return UnitV]
+evalS (InstanceS iName cName typ methodExprs) =
+  [do methodVals <- lift $ mapM (evalE . snd) methodExprs
+      methodIdPairs <- return $ zip (map fst methodExprs) methodVals
+      _ <- bindGlobalVar iName $ InstanceV Instance { className = cName
+                                                    , instantiatedType = typ
+                                                    , methods = methodIdPairs
+                                                    }
+      return UnitV]
+evalS (SequenceS s1 s2) =
+  a ++ b
+  where a = evalS s1
+        b = evalS s2
+
+evalProgram :: [Statement] -> [StatementMonae Value]
+evalProgram statements =
+  foldr evalAndAppend [] statements
+  where evalAndAppend :: Statement -> [StatementMonae Value] -> [StatementMonae Value]
+        evalAndAppend s l = (evalS s) ++ l
 
 -------------------------------------------------------------------------------
 -- Apply
@@ -139,7 +173,9 @@ handlePrimOp (PrimOpV Equal) (NumberV left) (NumberV right) =
   ret $ case left == right of
     True -> InLeftV UnitV
     False -> InRightV UnitV
-handlePrimOp op _ _ = die $ "unknown primop" ++ show op
+handlePrimOp op left right = die $ "unknown primop app: " ++ show op
+                                 ++ " was applied to " ++ show left ++ " and "
+                                 ++ show right ++ "."
 
 -------------------------------------------------------------------------------
 -- Environment Things
@@ -257,6 +293,43 @@ clearEnv :: Monae t -> Monae t
 clearEnv = local (\env -> Environments { globalEnv = globalEnv env
                                        , localEnv = emptyStore
                                        })
+
+bindGlobalVar :: Id -> Value -> StatementMonae ()
+bindGlobalVar id value =
+  do gEnv <- get
+     put $ M.insert id value gEnv
+bindGlobalVars :: [Id] -> [Value] -> StatementMonae [()]
+bindGlobalVars ids values =
+  zipWithM bindGlobalVar ids values
+
+-------------------------------------------------------------------------------
+-- Monad for Statements
+
+type StatementMonae t = StateT Store Monae t
+
+runStatement :: StatementMonae t
+                -> Heap
+                -> Store
+                -> Store
+                -> Either Fail (t, Heap)
+runStatement x heap gEnv lEnv =
+  runMonae (evalStateT x emptyStore) heap gEnv lEnv
+
+runStatements :: [StatementMonae t]
+                 -> Heap
+                 -> Store
+                 -> Either Fail ([t], Heap, Store)
+runStatements commands heap gEnv =
+  foldM combine ([], heap, gEnv) commands
+  where combine (vals, heap, gEnv) command =
+          do ((val, gEnv'), heap') <- runMonae (runStateT command gEnv) heap gEnv emptyStore
+             return (val:vals, heap', gEnv')
+
+runProgram :: [StatementMonae t] -> Either Fail [t]
+runProgram commands =
+  do (vals, _, _) <- runStatements commands emptyHeap emptyStore
+     return vals
+
 -------------------------------------------------------------------------------
 -- General Combinators
 

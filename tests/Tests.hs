@@ -97,7 +97,7 @@ checkEqual name expected actual =
 
 intShowInstance = (InstanceV
                    (Instance { className = "Show"
-                             , instantiatedType = NumberT
+                             , instantiatedType = (QuantifiedConstraintsTS [] [] NumberT)
                              , methods =
                                [("show", (FunctionV
                                           (Function { instanceParams = []
