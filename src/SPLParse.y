@@ -186,8 +186,10 @@ maybeTypes :: { [Type] }
            : { [] }
            | types { $1 }
 
-matchPairs : matchPair            { [$1] }
-           | matchPairs matchPair { $2 : $1 }
+matchPairs : matchPairsRev { reverse $1 }
+
+matchPairsRev : matchPair            { [$1] }
+              | matchPairs matchPair { $2 : $1 }
 
 typeConstraints : typeConstraint                 { [$1] }
                 | typeConstraints typeConstraint { $2 : $1 }
