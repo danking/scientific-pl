@@ -193,13 +193,13 @@ maybeArraySubscript array index | (low <= index) && (index <= high) = ret $ arra
                                             ++ show low ++ "," ++ show high ++ "]"
   where (low, high) = bounds array
 
-
 -------------------------------------------------------------------------------
 -- Baby's First Monad
 
 data Environments = Environments { globalEnv :: Store
                                  , localEnv :: Store
                                  }
+                  deriving (Eq, Show, Read)
 type Monae = StateT Heap (ReaderT Environments (Either Fail))
 runMonae :: Monae t -> Heap -> Store -> Store -> Either Fail (t, Heap)
 runMonae x heap gEnv lEnv = runReaderT (runStateT x heap) $ Environments gEnv lEnv
