@@ -127,33 +127,6 @@ getPatternBindings (InLeftV v) (PatternInLeftP p) bindings =
 getPatternBindings (InRightV v) (PatternInRightP p) bindings =
   getPatternBindings v p bindings
 
-
--------------------------------------------------------------------------------
--- Types
-
-typeSchemeSubst :: TypeScheme -> [Type] -> [Value] -> Monae Type
-typeSchemeSubst (QuantifiedConstraintsTS typeIds _ flatType) typeArguments _ =
-  typeSubst flatType $ M.fromList $ zip typeIds typeArguments
-
-typeSubst :: Type -> TypeStore -> Monae Type
-typeSubst (NumberT) _ = ret NumberT
-typeSubst (ProductT left right) ts = do left' <- typeSubst left ts
-                                        right' <- typeSubst right ts
-                                        ret $ ProductT left' right'
-typeSubst (UnitT) _ = ret UnitT
-typeSubst (SumT left right) ts = do left' <- (typeSubst left ts)
-                                    right' <- (typeSubst right ts)
-                                    ret (SumT left' right')
-typeSubst (BottomT) _ = ret BottomT
-typeSubst (ArrayT dimensionality t) ts = do t' <- (typeSubst t ts)
-                                            ret (ArrayT dimensionality t')
-typeSubst (FunctionT parameters body) ts = do parameters' <- (mapM (\x -> typeSubst x ts) parameters)
-                                              body' <- (typeSubst body ts)
-                                              ret (FunctionT parameters' body')
-typeSubst (TypeVar identifier) ts = case M.lookup identifier ts of
-  (Just t) -> ret t
-  Nothing -> die $ "typeSubst: Type variable " ++ show identifier ++ "is unbound."
-
 -------------------------------------------------------------------------------
 -- Primitive Operations
 
