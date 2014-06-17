@@ -134,6 +134,7 @@ typeNoParens : numberT { NumberT }
 matchPair : matchPat fatArrow expression { ($1, $3) }
 matchPat :: { Pattern }
          : id ':' typ { PatternVarP $1 $3 }
+         | int { PatternNumberP $ fromIntegral $1 }
          | '(' matchPat ',' matchPat ')' { PatternPairP $2 $4 }
          | unit { PatternUnitP }
          | inl matchPat { PatternInLeftP $2 }

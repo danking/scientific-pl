@@ -144,10 +144,11 @@ getPair v pairs =
                      ++ show pairs
 
 patternMatch :: Value -> Pattern -> Bool
-patternMatch UnitV PatternUnitP = True
 patternMatch _ (PatternVarP _ _) = True
+patternMatch (NumberV n) (PatternNumberP n') = n == n'
 patternMatch (PairV left right) (PatternPairP left' right') =
   patternMatch left left' && patternMatch right right'
+patternMatch UnitV PatternUnitP = True
 patternMatch (InLeftV v) (PatternInLeftP p) = patternMatch v p
 patternMatch (InRightV v) (PatternInRightP p) = patternMatch v p
 patternMatch _ _ = False
@@ -160,6 +161,8 @@ getPatternBindings (InLeftV v) (PatternInLeftP p) bindings =
   getPatternBindings v p bindings
 getPatternBindings (InRightV v) (PatternInRightP p) bindings =
   getPatternBindings v p bindings
+getPatternBindings (NumberV n) (PatternNumberP n') bindings = bindings
+getPatternBindings UnitV PatternUnitP bindings = bindings
 
 -------------------------------------------------------------------------------
 -- Primitive Operations
