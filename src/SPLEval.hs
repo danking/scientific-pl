@@ -323,7 +323,7 @@ runStatements :: [StatementMonae t]
                  -> Store
                  -> Either Fail ([t], Heap, Store)
 runStatements commands heap gEnv =
-  foldM combine ([], heap, gEnv) commands
+  fmap (\(a,b,c) -> (reverse a, b, c)) $ foldM combine ([], heap, gEnv) commands
   where combine (vals, heap, gEnv) command =
           do ((val, gEnv'), heap') <- runMonae (runStateT command gEnv) heap gEnv emptyStore
              return (val:vals, heap', gEnv')
