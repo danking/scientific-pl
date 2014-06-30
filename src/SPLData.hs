@@ -77,8 +77,6 @@ data Value = NumberV Rational
            | InRightV Value
            | FunctionV Function
            | PrimOpV PrimOp
-             -- (MethodV classId methodId)
-           | MethodV TypeClassId Id
            | InstanceV Instance
            | ArrayV ArrayPtr
            deriving (Eq, Show, Read)
