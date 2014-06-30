@@ -50,22 +50,43 @@
 \usepackage{subcaption}
 % for subfigures
 
+\usepackage{MnSymbol}
+% for \llangle, i.e. double angle brackets
+
 \DeclareSymbolFont{bbold}{U}{bbold}{m}{n}
 \DeclareSymbolFontAlphabet{\mathbbold}{bbold}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Macros
 
+\newcommand{\pipe}[0]{\;|\;}
+
 \newcommand{\nats}[0]{\mathbbold{N}}
 \newcommand{\rats}[0]{\mathbbold{Q}}
 
-\newcommand{\plus}[0]{+}
+\renewcommand{\plus}[0]{+}
 \newcommand{\funcArrow}[0]{\to}
 \newcommand{\matchArrow}[0]{\Rightarrow}
 \newcommand{\constraintArrow}[0]{\Rightarrow}
 
 \newcommand{\unitType}[0]{\mathbbold{1}}
 \newcommand{\nullType}[0]{\mathbbold{0}}
+
+\newcommand{\functionApp}[4]{#1 [#2] [#3] (#4)}
+\newcommand{\functionAppDotsp}[4]{\functionApp{#1}{#2_1\,#2_2\,\dots}{#3}{#4_1\,#4_2 \dots}}
+\newcommand{\functionAppDotss}[4]{\functionApp{#1}{#2\,\dots}{#3}{#4\,\dots}}
+\newcommand{\ctx}[0]{\mathcal{C}}
+
+\newcommand{\functionValueDotss}[3]{\left\llangle #1\;\dots \;,\; #2\;\dots \;,\; #3 \right\rrangle}
+
+\newcommand{\config}[3]{\left\langle #1 \;,\; #2 \;,\; #3 \right\rangle}
+
+\newcommand{\envLocal}[0]{\Sigma_L}
+\newcommand{\envGlobal}[0]{\Sigma_G}
+\newcommand{\withMapping}[3]{#1\left[#2 \to #3 \right]}
+\newcommand{\withMappings}[3]{\withMapping{#1}{#2}{#3}}
+
+\newcommand{\stepsTo}[2]{#1 \longrightarrow #2}
 
 \newcommand{\firstAlt}[2]{\;\;&#1 & \text{#2}\\}
 \newcommand{\alt}[2]{| \firstAlt{#1}{#2}}
@@ -93,10 +114,10 @@
 \end{align*}
 
 \begin{align*}
-  E ::= \firstAlt{x}{Variables}
+  e \in E ::= \firstAlt{x}{Variables}
         \alt{1 \;|\; 2 \;|\; \dots}{Natural numbers}
         \alt{E_1 \; \oplus \; E_2}{Primitive operations}
-        \alt{f [\tau_1\,\tau_2\,\dots] [I_1\,I_2\,\dots] (E_1\,E_2 \dots)}
+        \alt{\functionAppDotsp{f}{\tau}{I_1\,I_2\dots}{E}}
             {Function application}
         \alt{(E_1,\, E_2)}{Pairs}
         \alt{()}{Unit}
@@ -113,12 +134,40 @@
 \begin{align*}
   S ::= \firstAlt{E}{Expressions}
         \alt{S_1 \;;\; S_2}{Sequencing}
-        \alt{f [\tau_1\,\tau_2\,\dots] [C_1\,\tau_1\;\;C_2\,\tau_2\;\dots] (x_1\,x_2 \dots)}
+        \alt{\functionAppDotsp{f}{\tau}{C_1\,\tau_1\;C_2\,\tau_2\;\dots}{x}}
             {Function definition}
-        \alt{\mathrm{class}\; \tau\; \tau \; \{ f_1 : \tau_1 \dots \} }
+        \alt{\mathrm{class}\; \tau_{class}\; \tau \; \{ f_1 : \tau_1 \dots \} }
             {Type-class definition}
-        \alt{\mathrm{instance}\; x \;:\; C \, \tau \{ f_1 = E_1 \dots \}}
+        \alt{\mathrm{instance}\; x \;:\; \tau_{class} \, \tau \{ f_1 = E_1 \dots \}}
             {Instance definition}
+\end{align*}
+
+\begin{align*}
+  \ctx ::=& [] \\
+     \pipe& \functionApp{\ctx}{\tau\;\dots}{I\;\dots}{e\;\dots} \\
+     \pipe& \functionApp{v_f}{\tau\;\dots}{v_I\;\dots\;\ctx\;I\;\dots}{e\;\dots} \\
+     \pipe& \functionApp{v}{\tau\;\dots}{v_I\;\dots}{v_E\;\dots\;\ctx\;e\;\dots} \\
+     \vdots&
+\end{align*}
+
+
+\begin{align*}
+  \stepsTo{&\config{\functionAppDotss{f}{\tau}{v_I\;\dots}{v}}
+                  {\envLocal}
+                  {\envGlobal^{\prime} =
+                    \withMapping{\envGlobal}
+                                {f}
+                                {\functionValueDotss{I}{x}{e_{body}}}}\\ &}
+          {\\&\config{e_{body}}
+                  {\withMappings{
+                   \withMappings{\envLocal}
+                                {x\;\dots}
+                                {v\;\dots}}
+                                {I\;\dots}
+                                {v_I\;\dots}
+                              }
+                  {\envGlobal^{\prime}}
+                }
 \end{align*}
 
 \end{document}
